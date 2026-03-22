@@ -1,0 +1,14 @@
+{
+  "name": "gowe",
+  "private": true,
+  "packageManager": "pnpm@10.18.1",
+  "scripts": {
+    "format": "prettier --write \"{README.md,CONTRIBUTING.md,SPEC.md,docs/**/*.md,examples/**/*.md,diagrams/**/*.md,versions/**/*.md}\"",
+    "format:check": "prettier --check \"{README.md,CONTRIBUTING.md,SPEC.md,docs/**/*.md,examples/**/*.md,diagrams/**/*.md,versions/**/*.md}\"",
+    "lint": "markdownlint-cli2 \"{README.md,CONTRIBUTING.md,SPEC.md,docs/**/*.md,examples/**/*.md,diagrams/**/*.md,versions/**/*.md}\""
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.18.1",
+    "prettier": "^3.5.3"
+  }
+}

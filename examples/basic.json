@@ -1,0 +1,11 @@
+{
+  "id": 1001,
+  "name": "alice",
+  "admin": false,
+  "tags": ["team-a", "ops"],
+  "scores": [12, 15, 18, 21],
+  "meta": {
+    "region": "ap-northeast-1",
+    "active": true
+  }
+}

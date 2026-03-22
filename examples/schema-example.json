@@ -1,0 +1,55 @@
+{
+  "schema": {
+    "schemaId": 42,
+    "name": "UserRecordV1",
+    "fields": [
+      {
+        "number": 1,
+        "name": "id",
+        "type": "u32",
+        "required": true,
+        "range": [1, 10000000]
+      },
+      {
+        "number": 2,
+        "name": "role",
+        "type": "string",
+        "required": true,
+        "enum": ["viewer", "editor", "admin"]
+      },
+      {
+        "number": 3,
+        "name": "age",
+        "type": "u8",
+        "required": false,
+        "range": [0, 127],
+        "default": 0
+      },
+      {
+        "number": 4,
+        "name": "active",
+        "type": "bool",
+        "required": true
+      }
+    ]
+  },
+  "records": [
+    {
+      "id": 1001,
+      "role": "admin",
+      "age": 36,
+      "active": true
+    },
+    {
+      "id": 1002,
+      "role": "viewer",
+      "active": false
+    },
+    {
+      "id": 1003,
+      "role": "editor",
+      "age": 29,
+      "active": true
+    }
+  ]
+}
