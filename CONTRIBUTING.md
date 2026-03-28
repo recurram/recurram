@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for improving the Gowe documentation.
+Thank you for improving the Recurram documentation.
 
 ## Scope
 

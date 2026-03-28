@@ -1,10 +1,10 @@
 # Encoding Guide
 
-This document describes scalar, vector, string, and compression encoding rules used by Gowe. It complements `docs/format.md` (message forms) and `docs/transport.md` (state behavior).
+This document describes scalar, vector, string, and compression encoding rules used by Recurram. It complements `docs/format.md` (message forms) and `docs/transport.md` (state behavior).
 
 ## 1. Metadata Integers
 
-Lengths, counts, and ids SHOULD use `Gowe-PV` varuint unless a profile explicitly overrides it.
+Lengths, counts, and ids SHOULD use `Recurram-PV` varuint unless a profile explicitly overrides it.
 
 Typical targets:
 
@@ -91,7 +91,7 @@ Fallback to plain float encoding or generic compression when XOR residuals are u
 
 ## 7. String Modes
 
-Gowe supports multiple string modes to reduce repeated literal cost.
+Recurram supports multiple string modes to reduce repeated literal cost.
 
 - `EMPTY`
 - `LITERAL`

@@ -1,6 +1,6 @@
 # Format Guide
 
-This document explains the wire-level shape of Gowe messages. It focuses on message kinds, payload layout patterns, and promotion paths between profiles.
+This document explains the wire-level shape of Recurram messages. It focuses on message kinds, payload layout patterns, and promotion paths between profiles.
 
 ## 1. Top-Level Message Kind
 

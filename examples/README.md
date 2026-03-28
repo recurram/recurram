@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains small JSON artifacts that map directly to Gowe specification concepts.
+This directory contains small JSON artifacts that map directly to Recurram specification concepts.
 
 ## Files
 

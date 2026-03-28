@@ -1,4 +1,4 @@
-# Gowe Specification v1
+# Recurram Specification v1
 
 ## 1. Purpose
 
@@ -292,7 +292,7 @@ bits = ceil(log2(max - min + 1))
 
 ## 8.3 metadata varuint
 
-Use Gowe-PV for metadata such as lengths, IDs, and counts.
+Use Recurram-PV for metadata such as lengths, IDs, and counts.
 
 Targets:
 
@@ -954,7 +954,7 @@ For one-shot integers, use smallest-width integer.
 - 0..2^32-1 -> uint32
 - above that -> uint64
 
-Use Gowe-PV only for metadata count/id/length.
+Use Recurram-PV only for metadata count/id/length.
 
 #### Rule I2: schema-aware bounded integer
 

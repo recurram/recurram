@@ -1,4 +1,4 @@
-# Gowe
+# Recurram
 
 This repository contains a documentation-first specification for a compact binary format for structured data.
 

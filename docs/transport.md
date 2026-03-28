@@ -1,10 +1,10 @@
 # Transport Guide
 
-This document explains transport and session behavior for Gowe, especially when stateful compression is enabled. Message layout details are in `docs/format.md`; scalar/codec behavior is in `docs/encoding.md`.
+This document explains transport and session behavior for Recurram, especially when stateful compression is enabled. Message layout details are in `docs/format.md`; scalar/codec behavior is in `docs/encoding.md`.
 
 ## 1. Transport Assumptions
 
-Gowe can operate in stateless or stateful mode.
+Recurram can operate in stateless or stateful mode.
 
 - Stateless mode works on any transport and sends self-sufficient messages.
 - Stateful mode reuses learned/session data and requires stronger ordering guarantees.
