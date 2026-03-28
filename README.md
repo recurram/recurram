@@ -21,7 +21,7 @@ The format is intended to remain easy to use in schema-less workflows while beco
 ## Repository Layout
 
 ```text
-gowe/
+recurram/
 ├ README.md
 ├ LICENSE
 ├ CONTRIBUTING.md
