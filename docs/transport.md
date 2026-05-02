@@ -1,127 +1,97 @@
-# Transport Guide
+# Transport Guide (v2)
 
-This document explains transport and session behavior for Recurram, especially when stateful compression is enabled. Message layout details are in `docs/format.md`; scalar/codec behavior is in `docs/encoding.md`.
+This document describes transport and session behavior for Recurram v2.
 
-## 1. Transport Assumptions
+## 1. Stateless vs Stateful
 
-Recurram can operate in stateless or stateful mode.
+- Stateless mode: every message is self-sufficient.
+- Stateful mode: messages may reference prior session state (`base_id`, templates, dictionaries).
 
-- Stateless mode works on any transport and sends self-sufficient messages.
-- Stateful mode reuses learned/session data and requires stronger ordering guarantees.
+When transport guarantees are weak, encoder SHOULD remain stateless or use stateless retry policy.
 
-If a transport cannot preserve state assumptions, implementations SHOULD keep or fall back to stateless mode.
+Recommended default for general HTTP/queue usage is stateless mode.
 
-## 2. Session State Model
+## 2. Session State
 
-In stateful mode, encoder and decoder share session-local state.
+Session state may include:
 
-State may include:
+- base snapshots
+- templates
+- optional dictionary metadata
 
-- key table
-- shape table
-- string table
-- field-local dictionaries
-- `base_id` snapshots
-- `template_id` descriptors
-- optional trained dictionary references
+Per-message key/string/shape interning tables are message-local in v2 and are not persistent session state.
 
-Session state MUST NOT be implicitly reused across independent streams/connections.
+Session state objects (`base_id`, `template_id`, dictionary ids) MUST NOT be reused across independent streams.
 
-## 3. Stateful Message Types
+Session epochs SHOULD be treated as transport-local context and reset on reconnect unless explicitly negotiated.
 
-### 3.1 `BASE_SNAPSHOT`
+## 3. Stateful Forms
 
-Registers a full payload as a future patch base.
+### 3.1 `state_patch` (`0xDD`)
 
-```text
-[base_id][schema_or_shape_ref][payload]
-```
+Delta payload against previous message or explicit base id.
 
-### 3.2 `STATE_PATCH`
+Typical usage:
 
-Encodes only changed parts against previous message or explicit base.
+- hot object streams where changed-field ratio is low
+- repeated schema emissions with minor updates
 
-```text
-[base_ref][patch_opcode_stream][changed_fields][optional literals]
-```
+### 3.2 `template_batch` (`0xDE`)
 
-Typical opcodes include `KEEP`, `REPLACE_*`, `APPEND_VECTOR`, and string-ref operations.
+Micro-batch reuse for repeated schema/shape bursts.
 
-### 3.3 `TEMPLATE_BATCH`
+Typical usage:
 
-Reuses recent batch metadata for small bursts of similar records.
+- short burst batches where full column mode is overkill
+- repeated optional-field presence patterns
 
-```text
-[template_id][count][changed-column-mask][column payloads]
-```
+### 3.3 Batch forms (`0xDB` / `0xDC`)
 
-### 3.4 `CONTROL_STREAM`
+Row and column batches remain available in session or stateless contexts.
 
-Moves dense control lanes (presence/opcodes/enum streams) into a separately compressed stream.
+- `row_batch` is suitable for low-latency, moderate-size bursts
+- `col_batch` is suitable for larger batches and column codec gains
 
-## 4. Synchronization and Resets
+## 4. Reset Behavior
 
-### 4.1 Table Reset
+- `RESET_STATE`: invalidates all state references (bases/templates/dictionaries).
 
-`RESET_TABLES` clears dynamic interning tables (`key_id`, `shape_id`, `string_id`).
+After `RESET_STATE`, both sides MUST treat old state ids as invalid.
 
-### 4.2 Full State Reset
+After reset, sender should emit a stateless full frame or fresh base/template registration before sending further stateful references.
 
-`RESET_STATE` invalidates patch/template/dictionary references.
+## 5. Unknown Reference Policy
 
-After `RESET_STATE`, both sides MUST treat prior `base_id`, `template_id`, and session dictionary bindings as unusable.
+Decoder policy MUST be fixed per deployment:
 
-## 5. Unknown Reference Handling
+- fail-fast
+- stateless retry
 
-When a decoder receives unknown `base_id`/`template_id`/`dict_id`, profile behavior MUST be predefined.
+Unknown ids MUST NOT be silently accepted.
 
-Allowed policies:
-
-- fail-fast with explicit error
-- request or retry with stateless full message
-
-A deployment SHOULD choose one policy and keep it stable.
+`stateless retry` means transport/application requests a stateless resend; it does not mean speculative local repair.
 
 ## 6. Ordering and Reliability
 
-Stateful mode depends on consistent message ordering.
+Stateful mode requires:
 
-Required properties:
+- ordered delivery for state-mutating frames
+- no silent drop of reset or base/template registration frames
+- bounded retention window alignment between peers
 
-- deterministic ordering for state-mutating messages
-- no silent loss of `CONTROL`, `BASE_SNAPSHOT`, or reset frames
-- bounded retention policy for `base_id` and `template_id`
+If the transport cannot provide these, stateful forms SHOULD be disabled.
 
-If packet loss or reordering is possible, the transport layer SHOULD provide sequencing/ack mechanisms, or encoder SHOULD disable stateful forms.
+Out-of-order delivery without reordering buffers can corrupt stateful decode expectations.
 
-## 7. Retention Windows
+## 7. Versioning
 
-Encoders and decoders SHOULD agree on retention limits.
+- v2 is a clean break from v1.
+- v1/v2 dual support requires explicit version signaling outside payload decode heuristics.
 
-Common controls:
+## 8. Operational Recommendations
 
-- max snapshot count (`maxBaseSnapshots`)
-- max template count
-- optional dictionary version pinning
-
-Evicted references MUST NOT be used by either side.
-
-## 8. Fallback Strategy
-
-A robust transport strategy is:
-
-1. Start in stateless mode.
-2. Enable stateful forms after capability and stability checks.
-3. If divergence is detected, send `RESET_STATE` and one full stateless message.
-4. Resume stateful mode only after tables/bases are synchronized again.
-
-This preserves interoperability while still enabling strong compression gains.
-
-## 9. Security and Operational Notes
-
-- Validate all ids before dereference.
-- Enforce size limits for tables, dictionaries, and patch payloads.
-- Apply timeouts for sessions with no forward progress.
-- Log reset and fallback events for operational diagnosis.
-
-These controls reduce risk from malformed or adversarial input while keeping stateful operation predictable.
+- Keep stateless fallback path always available.
+- Log unknown reference failures with stream/session identifier.
+- Apply bounded state retention and eviction policies.
+- Monitor RESET_STATE frequency; frequent resets may indicate transport mismatch.
+- For mixed deployments, gate v2 rollout behind explicit version negotiation.

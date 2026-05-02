@@ -1,56 +1,71 @@
-# Encoding Guide
+# Encoding Guide (v2)
 
-This document describes scalar, vector, string, and compression encoding rules used by Recurram. It complements `docs/format.md` (message forms) and `docs/transport.md` (state behavior).
+This guide covers scalar, reference, and vector encoding behavior for Recurram v2. It is detailed by encode-time rule so implementations can stay deterministic and interoperable.
 
-## 1. Metadata Integers
+## 1. Lengths and IDs
 
-Lengths, counts, and ids SHOULD use `Recurram-PV` varuint unless a profile explicitly overrides it.
+Lengths and ids use varuint for:
 
-Typical targets:
+- dynamic lengths
+- `key_id`, `str_id`, `shape_id`
+- `base_id`, `template_id`, and other state ids when session features are enabled
 
-- lengths and counts
-- `key_id`, `shape_id`, `string_id`
-- `schema_id`, `template_id`, `base_id`
+Varuint domains in v2 are used for metadata, not for replacing fixed integer value tags.
 
-## 2. Scalar Numbers
+## 2. Scalar Rules
 
-### 2.1 Integer Scalars
+### 2.1 Integers
 
-For one-shot integer values, use smallest-width integer selection.
+- Use fixint for `-32..127` first.
+- Otherwise use fixed-width `i8/i16/i32/i64` or `u8/u16/u32/u64`.
+- Encoder SHOULD choose smallest valid width.
 
-- `0..255` -> `uint8`
-- `0..65535` -> `uint16`
-- `0..2^32-1` -> `uint32`
-- larger -> `uint64`
+Recommended width order:
 
-Negative integers MAY use zigzag transform plus smallest-width storage.
+- signed: `fixint` -> `i8` -> `i16` -> `i32` -> `i64`
+- unsigned: `fixint` -> `u8` -> `u16` -> `u32` -> `u64`
 
-### 2.2 Range-Aware Packing
+### 2.2 Float
 
-When schema bounds are known, encode `value - min` with minimal bit width.
+- scalar float uses `f64` (`0xC3`).
+
+### 2.3 Strings and Binary
+
+- `fixstr` for short strings (`<=31` bytes)
+- `str8/str16/str32` for larger strings
+- `bin8/bin16/bin32` for binary
+
+Length tags MUST match actual payload byte length exactly.
+
+## 3. Per-Message Interning
+
+### 3.1 Keys
+
+Literal map keys are registered in first-seen order and may be replaced with `key_ref`.
+
+Registration order is part of deterministic behavior and cannot be implementation-random.
+
+### 3.2 String Values
+
+Literal string values are registered in first-seen order and may be replaced with `str_ref`.
+
+Interning state resets at each top-level message boundary.
+
+Unknown `key_ref`/`str_ref` ids MUST fail decode.
+
+### 3.3 Shape IDs
+
+Shape ids are message-local and first-seen assigned when `shape_def` appears. `shape_ref` may only target prior shape ids in the same top-level message.
+
+## 4. Typed Vector Encoding
+
+`typed_vec` payload:
 
 ```text
-bits = ceil(log2(max - min + 1))
+0xDA [element_type][count][codec][payload]
 ```
 
-## 3. Presence and Null
-
-Optional fields use a presence bitmap by default.
-
-- `1` = present
-- `0` = absent
-
-An inverted mode MAY be used when absent bits are sparse. If all optional fields are guaranteed present by profile/schema, the bitmap MAY be omitted.
-
-## 4. Boolean and Enum
-
-- `bool` values are bit-packed as 1 bit each.
-- enum values use `ceil(log2(N))` bits for `N` symbols.
-- bool/enum streams in vector or batch contexts MAY be moved into `CONTROL_STREAM`.
-
-## 5. Integer Vector Codecs
-
-Integer vectors/columns MAY use the following codecs:
+Supported numeric/vector codecs include:
 
 - `DIRECT_BITPACK`
 - `DELTA_BITPACK`
@@ -60,122 +75,56 @@ Integer vectors/columns MAY use the following codecs:
 - `RLE`
 - `PATCHED_FOR`
 - `SIMPLE8B`
+- `XOR_FLOAT` for float vectors
 
-### 5.1 Codec Selection Heuristics
+Codec choice SHOULD be deterministic for equal input statistics and equal profile configuration.
 
-Practical default order:
+## 5. Shape-Optimized Arrays
 
-1. `DELTA_DELTA_BITPACK` for near-constant adjacent deltas (timestamps).
-2. `RLE` for long repeated runs.
-3. `FOR_BITPACK` for tightly clustered values.
-4. `DELTA_FOR_BITPACK` for monotonic or nearly monotonic sequences.
-5. `DELTA_BITPACK` when delta width is much smaller than plain width.
-6. `PATCHED_FOR` when most values fit and few overflow.
-7. `DIRECT_BITPACK` when width is still smaller than plain.
-8. `PLAIN` for tiny blocks or non-beneficial cases.
+For same-shape map arrays:
 
-## 6. Float Vector Codecs
+- emit one `shape_def`
+- emit row values without repeated key literals
 
-### 6.1 `XOR_FLOAT`
+This optimization is valid within one message and does not require session state.
 
-`XOR_FLOAT` is recommended for smooth float series.
+Fallback behavior:
 
-High-level flow:
+- if shape stability is not detected, encode as regular maps
+- if unsupported value appears mid-stream, encoder may fall back to generic map/array tags
 
-1. Emit first value as full 64-bit payload.
-2. XOR each subsequent value with previous value bits.
-3. Emit compact control for zero/non-zero XOR.
-4. For non-zero XOR, emit leading/trailing zero spans and meaningful middle bits.
+## 6. Determinism
 
-Fallback to plain float encoding or generic compression when XOR residuals are unstable.
+Implementations MUST keep deterministic encode decisions for identical input and state:
 
-## 7. String Modes
+- same fix-family selection
+- same intern id assignment order
+- same vector codec tie-break behavior
 
-Recurram supports multiple string modes to reduce repeated literal cost.
+Additional deterministic expectations:
 
-- `EMPTY`
-- `LITERAL`
-- `REF`
-- `PREFIX_DELTA`
-- `INLINE_ENUM`
+- same traversal order for map key emission under the same runtime representation
+- same shape id assignment for equivalent arrays
+- same fallback threshold behavior when optional codecs are available
 
-### 7.1 `LITERAL`
+## 7. Compatibility Contract
 
-```text
-[length][utf8 bytes]
-```
+- v2 is a clean break from v1 wire behavior.
+- v2 decoders are not required to decode v1 bytes.
+- If both versions are supported, select version explicitly outside this encoding layer.
 
-### 7.2 `REF`
+## 8. Encode Error Conditions
 
-```text
-[string_id]
-```
+Encoders should fail early on:
 
-References a previously registered string.
+- integer overflow for selected numeric domain
+- unsupported value type for target profile
+- invalid reference construction (negative ids, out-of-range ids)
+- inconsistent typed vector payload length or codec metadata
 
-### 7.3 `PREFIX_DELTA`
+Decoders should fail early on:
 
-```text
-[base_ref][prefix_len][suffix bytes]
-```
-
-Effective for related paths, ids, or shared textual prefixes.
-
-### 7.4 `INLINE_ENUM`
-
-A string field with stable low cardinality MAY be promoted to compact enum code form.
-
-## 8. Dictionary Scope
-
-String dictionaries MAY be maintained at:
-
-- stream scope
-- shape/schema scope
-- field-local scope
-
-Field-local dictionaries are often best for low-cardinality columns. Static dictionaries MAY be predefined by profile for common vocabularies.
-
-## 9. Typed Vector Payloads
-
-`TYPED_VECTOR` combines type metadata with a vector codec.
-
-```text
-[element_type][count][codec][payload]
-```
-
-Typical payload families:
-
-- bit-packed bool streams
-- integer codecs listed above
-- float `XOR_FLOAT` or plain float blocks
-- string dictionary/offset/prefix-delta forms
-
-## 10. Zero Packing
-
-For fixed-width payloads with many zeros, optional word-level zero packing MAY be used.
-
-Mechanism:
-
-- one tag byte covers one 8-byte word
-- tag bit `1` keeps literal byte
-- tag bit `0` implies zero byte
-
-This is useful for sparse/default-heavy fixed layouts.
-
-## 11. Generic Compression Layer
-
-After data-aware encoding, a block-level generic compressor MAY be applied.
-
-Recommended defaults:
-
-- `LZ4` for low-latency transport
-- `zstd` for larger blocks
-- zstd with trained dictionaries for stable small-message families
-
-Compression SHOULD be skipped for very small or already dense blocks.
-
-## 12. Determinism Requirement
-
-Within one fixed profile and equivalent learning/session state, encoder decisions MUST be deterministic.
-
-Implementations MAY score candidate codecs, but tie-break behavior MUST be fixed.
+- unknown `key_ref` / `str_ref` / `shape_ref`
+- malformed length fields
+- truncated payload
+- mismatched container element counts

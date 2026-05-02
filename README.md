@@ -52,16 +52,16 @@ recurram/
 2. `docs/format.md` for top-level kinds, object forms, batches, patches, and resets.
 3. `docs/encoding.md` for scalar rules, vector codecs, string modes, and compression.
 4. `docs/transport.md` for session-scoped state and transport assumptions.
-5. `versions/v1.md` for the reference interoperability profile.
+5. `versions/v2.md` for the reference interoperability profile.
 6. `examples/` and `diagrams/` for small concrete artifacts.
 
 ## Reference Profile
 
-This repository includes a reference profile in `versions/v1.md`.
+This repository includes a reference profile in `versions/v2.md`.
 
 That profile fixes:
 
-- supported kinds
+- v2 tag-table families and supported kinds
 - required reset operations
 - default deterministic heuristics
 - recommended metadata and codec rules
