@@ -50,6 +50,29 @@ If you use the Node tooling in this repository:
 - run `pnpm format` before submitting Markdown changes
 - run `pnpm lint` before submitting Markdown changes
 
+## Commit Messages
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/).
+
+Use this format:
+
+```text
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Common types include `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, and `chore`.
+
+Examples:
+
+- `docs: clarify v1 bound profile rules`
+- `fix(spec): correct scalar width table`
+
+After `pnpm install`, Husky runs Commitlint on each local commit. Pull requests are also checked in CI so every commit in the branch follows the same rules.
+
 ## Contribution Checklist
 
 - The affected requirements were updated in the right file.
