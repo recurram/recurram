@@ -4,6 +4,16 @@ This repository contains a documentation-first specification for a compact binar
 
 The format is intended to remain easy to use in schema-less workflows while becoming materially smaller than plain MessagePack when repeated structure, repeated strings, homogeneous arrays, batching, or session reuse is present.
 
+## Name
+
+Twilic is named after Old English _twilic_, the root of the modern word _twill_.
+
+_Twill_ is a weave built from repeated threads, often forming a diagonal pattern. The name reflects Twilic's core idea: repeated data shapes, keys, and values should not be sent again and again as independent structures, but woven together into a compact binary representation.
+
+In other words, Twilic treats structured data less like isolated messages and more like a fabric of recurring patterns.
+
+The etymology follows [Merriam-Webster](https://www.merriam-webster.com/dictionary/twill), which traces _twill_ to Old English _twilic_ (“having a double thread”).
+
 ## Goals
 
 - reduce repeated object-key overhead
