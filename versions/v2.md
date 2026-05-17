@@ -1,4 +1,4 @@
-# Recurram Specification v2
+# Twilic Specification v2
 
 ## 1. Purpose
 
@@ -99,7 +99,7 @@ This profile is optional. On transports that cannot support it, Dynamic/Bound/Ba
 
 ## 4. v2 Wire Tags
 
-Recurram v2 uses a compact tag-table wire model instead of v1 top-level message kinds.
+Twilic v2 uses a compact tag-table wire model instead of v1 top-level message kinds.
 
 | Range        | Meaning                          |
 | ------------ | -------------------------------- |
@@ -273,7 +273,7 @@ bits = ceil(log2(max - min + 1))
 
 ## 8.3 metadata varuint
 
-Use Recurram-PV for metadata such as lengths, IDs, and counts.
+Use Twilic-PV for metadata such as lengths, IDs, and counts.
 
 Targets:
 
@@ -933,7 +933,7 @@ For one-shot integers, use smallest-width integer.
 - 0..2^32-1 -> uint32
 - above that -> uint64
 
-Use Recurram-PV only for metadata count/id/length.
+Use Twilic-PV only for metadata count/id/length.
 
 #### Rule I2: schema-aware bounded integer
 

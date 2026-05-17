@@ -1,6 +1,6 @@
 # Format Guide (v2)
 
-This document describes the Recurram v2 wire layout in practical terms. It mirrors the normative rules in `SPEC.md`, but keeps the focus on byte structure and decode shape.
+This document describes the Twilic v2 wire layout in practical terms. It mirrors the normative rules in `SPEC.md`, but keeps the focus on byte structure and decode shape.
 
 ## 1. Wire Model Overview
 

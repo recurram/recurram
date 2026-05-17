@@ -1,5 +1,5 @@
 {
-  "name": "recurram",
+  "name": "twilic",
   "private": true,
   "packageManager": "pnpm@10.33.2",
   "scripts": {

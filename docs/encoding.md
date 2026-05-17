@@ -1,6 +1,6 @@
 # Encoding Guide (v2)
 
-This guide covers scalar, reference, and vector encoding behavior for Recurram v2. It is detailed by encode-time rule so implementations can stay deterministic and interoperable.
+This guide covers scalar, reference, and vector encoding behavior for Twilic v2. It is detailed by encode-time rule so implementations can stay deterministic and interoperable.
 
 ## 1. Lengths and IDs
 

@@ -1,4 +1,4 @@
-# Recurram
+# Twilic
 
 This repository contains a documentation-first specification for a compact binary format for structured data.
 
@@ -21,7 +21,7 @@ The format is intended to remain easy to use in schema-less workflows while beco
 ## Repository Layout
 
 ```text
-recurram/
+twilic/
 ├ README.md
 ├ LICENSE
 ├ CONTRIBUTING.md

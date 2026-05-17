@@ -1,6 +1,6 @@
 # Transport Guide (v2)
 
-This document describes transport and session behavior for Recurram v2.
+This document describes transport and session behavior for Twilic v2.
 
 ## 1. Stateless vs Stateful
 

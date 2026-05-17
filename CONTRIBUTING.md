@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for improving the Recurram documentation.
+Thank you for improving the Twilic documentation.
 
 ## Scope
 
